@@ -1,8 +1,26 @@
 <script lang="ts">
   import { bnNumber } from './bengali';
-  import type { Result } from './engine.svelte';
+  import type { ResultData } from '../../shared/types';
+  import type { SaveState } from './api';
 
-  let { result, onrestart }: { result: Result; onrestart: () => void } = $props();
+  let {
+    result,
+    onrestart,
+    onback,
+    save = 'off',
+    date,
+  }: {
+    result: ResultData;
+    /** shown as the restart button (live result) */
+    onrestart?: () => void;
+    /** shown as a back button (history detail) */
+    onback?: () => void;
+    save?: SaveState;
+    /** unix ms, shown for history entries */
+    date?: number;
+  } = $props();
+
+  const dateFmt = new Intl.DateTimeFormat('bn-BD', { dateStyle: 'medium', timeStyle: 'short' });
 
   const W = 900;
   const H = 240;
@@ -62,7 +80,10 @@
   <div class="details">
     <div class="stat">
       <div class="label">test type</div>
-      <div class="small">{result.mode} {result.amount}<br />বাংলা · প্রভাত</div>
+      <div class="small">
+        {result.mode} {result.amount}<br />বাংলা · প্রভাত
+        {#if date}<br />{dateFmt.format(date)}{/if}
+      </div>
     </div>
     <div class="stat">
       <div class="label">raw</div>
@@ -82,12 +103,26 @@
     </div>
   </div>
 
-  <button class="restart" onclick={onrestart} title="restart (tab / enter)">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 12a9 9 0 1 1-3-6.7" />
-      <path d="M21 3v6h-6" />
-    </svg>
-  </button>
+  <div class="bottom">
+    {#if onrestart}
+      <button class="restart" onclick={onrestart} title="restart (tab / enter)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-3-6.7" />
+          <path d="M21 3v6h-6" />
+        </svg>
+      </button>
+    {/if}
+    {#if onback}
+      <button class="restart" onclick={onback} title="back (esc)">← ইতিহাসে ফিরুন</button>
+    {/if}
+    {#if save === 'saving'}
+      <span class="save">সংরক্ষণ হচ্ছে…</span>
+    {:else if save === 'saved'}
+      <span class="save ok">✓ সংরক্ষিত</span>
+    {:else if save === 'error'}
+      <span class="save bad">সংরক্ষণ করা যায়নি</span>
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -175,8 +210,26 @@
     line-height: 1.3;
     font-family: var(--font-mono);
   }
+  .bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .save {
+    color: var(--sub);
+    font-size: 0.85rem;
+    animation: fade 0.2s ease-out;
+  }
+  .save.ok {
+    color: var(--main);
+  }
+  .save.bad {
+    color: var(--error);
+  }
   .restart {
-    align-self: center;
+    font-family: inherit;
+    font-size: 0.95rem;
     background: none;
     border: 0;
     color: var(--sub);

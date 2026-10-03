@@ -8,10 +8,32 @@ three-line scrolling, and a results screen with a WPM chart.
 
 ```sh
 pnpm install
-pnpm dev        # http://localhost:5173
-pnpm build      # production build in dist/
-pnpm check      # svelte-check + tsc
+pnpm db:migrate:local   # once: create the local D1 schema
+pnpm dev:api            # Worker API + local D1 on :8787
+pnpm dev                # Vite on :5173, proxies /api to :8787
+pnpm build              # production build in dist/
+pnpm check              # svelte-check + tsc (app, node, worker)
+pnpm release            # build, apply D1 migrations, deploy Worker
 ```
+
+Typing works without the API running; only login and history need it.
+
+## Accounts and history
+
+Optional username + password accounts store finished tests in Cloudflare D1. The API lives in
+`worker/index.ts` and runs in the same Worker that serves the static site
+(`run_worker_first` for `/api/*`).
+
+- Passwords are hashed with PBKDF2-SHA256 (100k iterations, random salt) via WebCrypto.
+- Sessions are random 256-bit tokens in an `HttpOnly; Secure; SameSite=Lax` cookie; only the
+  SHA-256 of the token is stored. Sessions last 30 days.
+- Mutating routes also require a same-origin `Origin` header.
+- Each result stores the summary and the per-second snapshots, so past charts can be replayed.
+- Schema in `migrations/`. Types shared by app and Worker in `shared/types.ts`.
+
+Routes: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`,
+`GET /api/results?limit=&before=`, `POST /api/results`, `DELETE /api/results/:id`,
+`GET /api/stats`.
 
 ## How input works
 

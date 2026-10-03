@@ -1,11 +1,23 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mtype",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
     "not_found_handling": "none",
-    "html_handling": "auto-trailing-slash"
+    "html_handling": "auto-trailing-slash",
+    "run_worker_first": ["/api/*"]
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mtype",
+      "database_id": "10f223b0-90e7-48f3-90d6-5e2b084c6236",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": { "enabled": true },
   "routes": [{ "pattern": "mtype.tahmid.dev", "custom_domain": true }]
 }
